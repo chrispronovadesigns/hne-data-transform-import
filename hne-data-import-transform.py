@@ -72,7 +72,7 @@ if uploaded_file:
                 base_data = {
                     'product_type': 'variable',
                     'post_type': 'product',
-                    'post_title': f"{brand_name} {product_name}",
+                    'post_title': f"{product_name}",
                     'brand': brand_name,
                     'sku': parent_sku,
                     'categories': group.iloc[0].get(category_column, ''),
