@@ -115,15 +115,8 @@ if uploaded_file:
                         if config.get('is_variation'):
                             if col in group.columns and pd.notna(row[col]):
                                 slug = config['slug']
-                                parent_value = base_data.get(f'attribute:pa_{slug}', '')
-                                parent_values = set(parent_value.split('|')) if parent_value else set()
-                                mask = pd.Series(True, index=group.index)
-                                for other_col, other_config in attribute_config.items():
-                                    if other_col != col and other_col in group.columns and other_config.get('is_variation'):
-                                        mask &= (group[other_col] == row[other_col]) | pd.isna(group[other_col])
-                                available_values = set(clean_attr_values(group.loc[mask, col].dropna().unique()))
-                                if available_values and len(available_values) < len(parent_values):
-                                    variation_data[f'meta:attribute_pa_{slug}'] = '|'.join(sorted(available_values))
+                                value = clean_attr_values([row[col]])
+                                variation_data[f'meta:attribute_pa_{slug}'] = '|'.join(value)
                     output_rows.append(variation_data)
 
             df_out = pd.DataFrame(output_rows)
