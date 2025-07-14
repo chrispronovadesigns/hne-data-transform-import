@@ -47,9 +47,11 @@ if uploaded_file:
                     if len(unique_vals) > 5:
                         st.caption(f"... and {len(unique_vals) - 5} more")
                         
+                    is_variation = st.checkbox(f"Affects SKU (variation attribute)", key=f"isvar_{col}", value=False)
                     attribute_config[col] = {
                         "slug": col.lower().replace(" ", "-"),
-                        "values": unique_vals
+                        "values": unique_vals,
+                        "is_variation": is_variation
                     }
 
         st.markdown("Using the following variation attributes:")
@@ -92,7 +94,7 @@ if uploaded_file:
                         slug = config['slug']
                         joined_values = '|'.join(sorted(set(attr_values)))
                         base_data[f'attribute:pa_{slug}'] = joined_values
-                        base_data[f'attribute_data:pa_{slug}'] = f"{joined_values.replace('|', '||')}|0|1"
+                        base_data[f'attribute_data:pa_{slug}'] = f"{joined_values.replace('|', '||')}0|0|1"
                         base_data[f'attribute_variation:pa_{slug}'] = '1'
                         base_data[f'attribute_default:pa_{slug}'] = ''
                 output_rows.append(base_data)
@@ -102,7 +104,7 @@ if uploaded_file:
                     variation_data = {
                         'product_type': 'variation',
                         'post_type': 'product_variation',
-                        'post_title': f"{product_name} - {row[sku_column]}",
+                        'post_title': f"{product_name}",
                         'sku': row[sku_column],
                         'parent_sku': parent_sku,
                         'regular_price': '0',
@@ -110,17 +112,18 @@ if uploaded_file:
                         'images': row.get('Image URL', '')
                     }
                     for col, config in attribute_config.items():
-                        if col in group.columns and pd.notna(row[col]):
-                            slug = config['slug']
-                            parent_value = base_data.get(f'attribute:pa_{slug}', '')
-                            parent_values = set(parent_value.split('|')) if parent_value else set()
-                            mask = pd.Series(True, index=group.index)
-                            for other_col in attribute_config:
-                                if other_col != col and other_col in group.columns:
-                                    mask &= (group[other_col] == row[other_col]) | pd.isna(group[other_col])
-                            available_values = set(clean_attr_values(group.loc[mask, col].dropna().unique()))
-                            if available_values and len(available_values) < len(parent_values):
-                                variation_data[f'meta:attribute_pa_{slug}'] = '|'.join(sorted(available_values))
+                        if config.get('is_variation'):
+                            if col in group.columns and pd.notna(row[col]):
+                                slug = config['slug']
+                                parent_value = base_data.get(f'attribute:pa_{slug}', '')
+                                parent_values = set(parent_value.split('|')) if parent_value else set()
+                                mask = pd.Series(True, index=group.index)
+                                for other_col, other_config in attribute_config.items():
+                                    if other_col != col and other_col in group.columns and other_config.get('is_variation'):
+                                        mask &= (group[other_col] == row[other_col]) | pd.isna(group[other_col])
+                                available_values = set(clean_attr_values(group.loc[mask, col].dropna().unique()))
+                                if available_values and len(available_values) < len(parent_values):
+                                    variation_data[f'meta:attribute_pa_{slug}'] = '|'.join(sorted(available_values))
                     output_rows.append(variation_data)
 
             df_out = pd.DataFrame(output_rows)
