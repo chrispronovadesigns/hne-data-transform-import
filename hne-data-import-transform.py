@@ -1,10 +1,27 @@
-# WooCommerce Import Formatter for WebToffee
-# How to run script: python -m streamlit run hne-data-import-transform.py
+"""
+WooCommerce Import Formatter for WebToffee
+
+This Streamlit app transforms product data from an Excel file into a WebToffee-compatible CSV for WooCommerce import.
+
+Workflow:
+- Upload an Excel file with product and variation data.
+- Select relevant columns (SKU, Product Name, Categories).
+- Configure which columns are used as attributes, which affect SKU (variation), and which are visible on the Additional Info section.
+- The app generates a CSV where:
+    - Parent (variable) rows have attribute_data columns set to 0|0|1 or 0|1|1 (visibility flag).
+    - Variation (child) rows have attribute_data columns set to the available value(s) (pipe-separated) for attributes that affect SKU and have fewer options than the parent; all other fields are blank.
+    - All attribute values are pipe-separated.
+    - regular_price is set to 0 for all rows.
+
+Output columns:
+- attribute:pa_{slug}, attribute_data:pa_{slug}, attribute_default:pa_{slug}, attribute_variation:pa_{slug}
+- Standard WooCommerce/WebToffee columns (sku, post_title, etc.)
+
+How to run: python -m streamlit run hne-data-import-transform.py
+"""
 
 import pandas as pd
 import streamlit as st
-import io
-from collections import defaultdict
 
 st.title("WooCommerce Product Import Generator")
 st.markdown("Upload an Excel file, pick the sheet, and download a WebToffee-ready CSV based on known variation attributes.")
@@ -117,11 +134,20 @@ if uploaded_file:
                         'images': row.get('Image URL', '')
                     }
                     for col, config in attribute_config.items():
+                        slug = config['slug']
+                        variation_data[f'attribute_data:pa_{slug}'] = ''  # Default blank for all variations
                         if config.get('is_variation'):
                             if col in group.columns and pd.notna(row[col]):
-                                slug = config['slug']
-                                value = clean_attr_values([row[col]])
-                                variation_data[f'meta:attribute_pa_{slug}'] = '|'.join(value)
+                                parent_value = base_data.get(f'attribute:pa_{slug}', '')
+                                parent_values = set(parent_value.split('|')) if parent_value else set()
+                                # Find all unique values for this attribute where all other attributes match
+                                mask = pd.Series(True, index=group.index)
+                                for other_col, other_config in attribute_config.items():
+                                    if other_col != col and other_col in group.columns:
+                                        mask &= (group[other_col] == row[other_col]) | pd.isna(group[other_col])
+                                value = str(row[col]).strip()
+                                if value:
+                                    variation_data[f'attribute_data:pa_{slug}'] = value
                     output_rows.append(variation_data)
 
             df_out = pd.DataFrame(output_rows)
