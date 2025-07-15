@@ -154,7 +154,7 @@ if uploaded_file:
             
             # Reorder columns to put important ones first
             column_order = [
-                'product_type', 'post_type', 'post_title', 'sku', 'parent_sku',
+                'product_type', 'post_type', 'post_title', 'brand', 'sku', 'parent_sku',
                 'regular_price', 'stock_status', 'categories', 'short_description',
                 'description', 'images'
             ]
