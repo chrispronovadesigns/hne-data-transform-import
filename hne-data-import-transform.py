@@ -40,18 +40,19 @@ if uploaded_file:
         for col in attribute_columns:
             with st.expander(f"Configure: {col}", expanded=False):
                 use_attr = st.checkbox(f"Use as attribute", key=f"use_{col}", value=True)
+                visible_info = st.checkbox(f"Visible on Additional Info section?", key=f"visible_{col}", value=False)
                 if use_attr:
                     # Show preview of unique values
                     unique_vals = df[col].dropna().unique()
                     st.caption(f"Unique values ({len(unique_vals)}): {', '.join(map(str, unique_vals[:5]))}")
                     if len(unique_vals) > 5:
                         st.caption(f"... and {len(unique_vals) - 5} more")
-                        
                     is_variation = st.checkbox(f"Affects SKU (variation attribute)", key=f"isvar_{col}", value=False)
                     attribute_config[col] = {
                         "slug": col.lower().replace(" ", "-"),
                         "values": unique_vals,
-                        "is_variation": is_variation
+                        "is_variation": is_variation,
+                        "visible_info": visible_info
                     }
 
         st.markdown("Using the following variation attributes:")
@@ -94,7 +95,11 @@ if uploaded_file:
                         slug = config['slug']
                         joined_values = '|'.join(sorted(set(attr_values)))
                         base_data[f'attribute:pa_{slug}'] = joined_values
-                        base_data[f'attribute_data:pa_{slug}'] = f"{joined_values.replace('|', '||')}0|0|1"
+                        # Set attribute_data:pa_{slug} based on visibility
+                        if config.get('visible_info', False):
+                            base_data[f'attribute_data:pa_{slug}'] = "0|1|1"
+                        else:
+                            base_data[f'attribute_data:pa_{slug}'] = "0|0|1"
                         base_data[f'attribute_variation:pa_{slug}'] = '1'
                         base_data[f'attribute_default:pa_{slug}'] = ''
                 output_rows.append(base_data)
