@@ -88,15 +88,15 @@ if uploaded_file:
                 brand_prefix = brand_name.upper().replace(' ', '')
                 parent_sku = f"{brand_prefix}-{first_sku}"
                 base_data = {
-                    'product_type': 'variable',
-                    'post_type': 'product',
+                    'tax:product_type': 'variable',
+                    'post_type': '',
                     'post_title': f"{product_name}",
-                    'brand': brand_name,
+                    'tax:product_brand': brand_name,
                     'sku': parent_sku,
-                    'categories': group.iloc[0].get(category_column, ''),
+                    'tax:product_cat': group.iloc[0].get(category_column, ''),
                     'stock_status': 'instock',
-                    'short_description': group.iloc[0].get('Short description', ''),
-                    'description': group.iloc[0].get('Description', ''),
+                    'Short_Description': group.iloc[0].get('Short description', ''),
+                    'Description': group.iloc[0].get('Description', ''),
                     'images': group.iloc[0].get('Image URL', '')
                 }
                 if not attribute_config:
@@ -124,8 +124,8 @@ if uploaded_file:
                 # Variations
                 for _, row in group.iterrows():
                     variation_data = {
-                        'product_type': 'variation',
-                        'post_type': 'product_variation',
+                        'tax:product_type': '',
+                        'post_type': '',
                         'post_title': f"{product_name}",
                         'sku': row[sku_column],
                         'parent_sku': parent_sku,
@@ -154,9 +154,9 @@ if uploaded_file:
             
             # Reorder columns to put important ones first
             column_order = [
-                'product_type', 'post_type', 'post_title', 'brand', 'sku', 'parent_sku',
-                'regular_price', 'stock_status', 'categories', 'short_description',
-                'description', 'images'
+                'tax:product_type', 'post_type', 'post_title', 'tax:product_brand', 'sku', 'parent_sku',
+                'regular_price', 'stock_status', 'tax:product_cat', 'Short_Description',
+                'Description', 'images'
             ]
 
             # Add attribute columns in a logical order
@@ -182,8 +182,8 @@ if uploaded_file:
             # Reorder columns
             df_out = df_out[all_columns]
             
-            # Generate CSV and create download button
-            csv_data = df_out.to_csv(index=False).encode('utf-8')
+            # Generate CSV with straight quotes and proper encoding
+            csv_data = df_out.to_csv(index=False, quoting=1, quotechar='"', encoding='utf-8').encode('utf-8')
             
             st.download_button(
                 label="Download WebToffee CSV",

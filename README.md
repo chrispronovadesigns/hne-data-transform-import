@@ -16,4 +16,4 @@ Output columns:
 attribute:pa_{slug}, attribute_data:pa_{slug}, attribute_default:pa_{slug}, attribute_variation:pa_{slug}
 Standard WooCommerce/WebToffee columns (sku, post_title, etc.)
 
-How to run: python -m streamlit run hne-data-import-transform.py
+How to run: python -m streamlit run hne-data-import-transform.py\
