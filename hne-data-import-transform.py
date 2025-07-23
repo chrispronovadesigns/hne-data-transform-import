@@ -76,7 +76,7 @@ if uploaded_file:
         st.write(attribute_config)
 
         def clean_attr_values(values):
-            return [str(v).replace(',', '|').replace(' ', '').strip() for v in values if pd.notna(v) and str(v).strip()]
+            return [str(v).replace(',', '|') for v in values if pd.notna(v) and str(v).strip()]
 
         if st.button("Generate WebToffee Import File"):
             grouped = df.groupby(product_column)
@@ -89,7 +89,7 @@ if uploaded_file:
                 parent_sku = f"{brand_prefix}-{first_sku}"
                 base_data = {
                     'tax:product_type': 'variable',
-                    'post_type': '',
+                    'post_type': 'product',
                     'post_title': f"{product_name}",
                     'tax:product_brand': brand_name,
                     'sku': parent_sku,
